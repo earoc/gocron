@@ -88,18 +88,13 @@ func (j *Job) shouldRun() bool {
 func (j *Job) run() (result []reflect.Value, err error) {
 	f := reflect.ValueOf(j.funcs[j.jobFunc])
 	params := j.fparams[j.jobFunc]
-	if len(params) != f.Type().NumIn() {
-		err = errors.New("The number of param is not adapted.")
-		return
-	}
 	in := make([]reflect.Value, len(params))
 	for k, param := range params {
 		in[k] = reflect.ValueOf(param)
 	}
-	result = f.Call(in)
+	go f.Call(in) // fix the bug https://github.com/jasonlvhit/gocron/issues/16
 	j.lastRun = time.Now()
 	j.scheduleNextRun()
-	return
 }
 
 // for given function fn , get the name of funciton.
