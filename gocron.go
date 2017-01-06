@@ -19,7 +19,6 @@
 package gocron
 
 import (
-	"errors"
 	"reflect"
 	"runtime"
 	"sort"
@@ -85,7 +84,7 @@ func (j *Job) shouldRun() bool {
 }
 
 //Run the job and immdiately reschedulei it
-func (j *Job) run() (result []reflect.Value, err error) {
+func (j *Job) run(){
 	f := reflect.ValueOf(j.funcs[j.jobFunc])
 	params := j.fparams[j.jobFunc]
 	in := make([]reflect.Value, len(params))
