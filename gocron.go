@@ -84,16 +84,17 @@ func (j *Job) shouldRun() bool {
 }
 
 //Run the job and immdiately reschedulei it
-func (j *Job) run(){
+func (j *Job) run() {
 	f := reflect.ValueOf(j.funcs[j.jobFunc])
 	params := j.fparams[j.jobFunc]
 	in := make([]reflect.Value, len(params))
 	for k, param := range params {
 		in[k] = reflect.ValueOf(param)
 	}
-	go f.Call(in) // fix the bug https://github.com/jasonlvhit/gocron/issues/16
 	j.lastRun = time.Now()
 	j.scheduleNextRun()
+	go f.Call(in) // fix the bug https://github.com/jasonlvhit/gocron/issues/16
+
 }
 
 // for given function fn , get the name of funciton.
