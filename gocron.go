@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"sort"
 	"time"
+	"sync"
 )
 
 // Time location, default set by the time.Local (*time.Location)
@@ -63,6 +64,8 @@ type Job struct {
 
 	// Map for function and  params of function
 	fparams map[string]([]interface{})
+
+	lock sync.RWMutex
 }
 
 // Create a new job with the time interval.
@@ -75,11 +78,14 @@ func NewJob(intervel uint64) *Job {
 		time.Sunday,
 		make(map[string]interface{}),
 		make(map[string]([]interface{})),
+		sync.RWMutex{},
 	}
 }
 
 // True if the job should be run now
 func (j *Job) shouldRun() bool {
+	j.lock.RLock()
+	defer  j.lock.RUnlock()
 	return time.Now().After(j.nextRun)
 }
 
@@ -151,6 +157,8 @@ func (j *Job) At(t string) *Job {
 
 //Compute the instant when this job should run next
 func (j *Job) scheduleNextRun() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
 	if j.lastRun == time.Unix(0, 0) {
 		if j.unit == "weeks" {
 			i := time.Now().Weekday() - j.startDay
