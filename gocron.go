@@ -22,8 +22,8 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
-	"time"
 	"sync"
+	"time"
 )
 
 // Time location, default set by the time.Local (*time.Location)
@@ -65,27 +65,29 @@ type Job struct {
 	// Map for function and  params of function
 	fparams map[string]([]interface{})
 
-	lock sync.RWMutex
+	sync.RWMutex
 }
 
 // Create a new job with the time interval.
-func NewJob(intervel uint64) *Job {
+func NewJob(interval uint64) *Job {
 	return &Job{
-		intervel,
-		"", "", "",
-		time.Unix(0, 0),
-		time.Unix(0, 0), 0,
-		time.Sunday,
-		make(map[string]interface{}),
-		make(map[string]([]interface{})),
-		sync.RWMutex{},
+		interval: interval,
+		jobFunc:  "",
+		unit:     "",
+		atTime:   "",
+		lastRun:  time.Unix(0, 0),
+		nextRun:  time.Unix(0, 0),
+		period:   0,
+		startDay: time.Sunday,
+		funcs:    make(map[string]interface{}),
+		fparams:  make(map[string]([]interface{})),
 	}
 }
 
 // True if the job should be run now
 func (j *Job) shouldRun() bool {
-	j.lock.RLock()
-	defer  j.lock.RUnlock()
+	j.RLock()
+	defer j.RUnlock()
 	return time.Now().After(j.nextRun)
 }
 
@@ -157,8 +159,8 @@ func (j *Job) At(t string) *Job {
 
 //Compute the instant when this job should run next
 func (j *Job) scheduleNextRun() {
-	j.lock.Lock()
-	defer j.lock.Unlock()
+	j.Lock()
+	defer j.Unlock()
 	if j.lastRun == time.Unix(0, 0) {
 		if j.unit == "weeks" {
 			i := time.Now().Weekday() - j.startDay
@@ -354,6 +356,8 @@ type Scheduler struct {
 
 	// Size of jobs which jobs holding.
 	size int
+
+	sync.RWMutex
 }
 
 // Scheduler implements the sort.Interface{} for sorting jobs, by the time nextRun
@@ -367,16 +371,23 @@ func (s *Scheduler) Swap(i, j int) {
 }
 
 func (s *Scheduler) Less(i, j int) bool {
+	s.RLock()
+	defer s.RUnlock()
 	return s.jobs[j].nextRun.After(s.jobs[i].nextRun)
 }
 
 // Create a new scheduler
 func NewScheduler() *Scheduler {
-	return &Scheduler{[MAXJOBNUM]*Job{}, 0}
+	return &Scheduler{
+		jobs: [MAXJOBNUM]*Job{},
+		size: 0,
+	}
 }
 
 // Get the current runnable jobs, which shouldRun is True
 func (s *Scheduler) getRunnableJobs() (running_jobs [MAXJOBNUM]*Job, n int) {
+	s.Lock()
+	defer s.Unlock()
 	runnableJobs := [MAXJOBNUM]*Job{}
 	n = 0
 	sort.Sort(s)
