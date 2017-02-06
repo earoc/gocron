@@ -86,8 +86,6 @@ func NewJob(interval uint64) *Job {
 
 // True if the job should be run now
 func (j *Job) shouldRun() bool {
-	j.RLock()
-	defer j.RUnlock()
 	return time.Now().After(j.nextRun)
 }
 
@@ -159,8 +157,6 @@ func (j *Job) At(t string) *Job {
 
 //Compute the instant when this job should run next
 func (j *Job) scheduleNextRun() {
-	j.Lock()
-	defer j.Unlock()
 	if j.lastRun == time.Unix(0, 0) {
 		if j.unit == "weeks" {
 			i := time.Now().Weekday() - j.startDay
@@ -176,7 +172,9 @@ func (j *Job) scheduleNextRun() {
 
 	if j.period != 0 {
 		// translate all the units to the Seconds
+		j.Lock()
 		j.nextRun = j.lastRun.Add(j.period * time.Second)
+		j.Unlock()
 	} else {
 		switch j.unit {
 		case "minutes":
@@ -371,8 +369,6 @@ func (s *Scheduler) Swap(i, j int) {
 }
 
 func (s *Scheduler) Less(i, j int) bool {
-	s.RLock()
-	defer s.RUnlock()
 	return s.jobs[j].nextRun.After(s.jobs[i].nextRun)
 }
 
@@ -386,11 +382,11 @@ func NewScheduler() *Scheduler {
 
 // Get the current runnable jobs, which shouldRun is True
 func (s *Scheduler) getRunnableJobs() (running_jobs [MAXJOBNUM]*Job, n int) {
-	s.Lock()
-	defer s.Unlock()
 	runnableJobs := [MAXJOBNUM]*Job{}
 	n = 0
+	s.Lock()
 	sort.Sort(s)
+	s.Unlock()
 	for i := 0; i < s.size; i++ {
 		if s.jobs[i].shouldRun() {
 
@@ -409,7 +405,9 @@ func (s *Scheduler) NextRun() (*Job, time.Time) {
 	if s.size <= 0 {
 		return nil, time.Now()
 	}
+	s.Lock()
 	sort.Sort(s)
+	s.Unlock()
 	return s.jobs[0], s.jobs[0].nextRun
 }
 
@@ -435,7 +433,9 @@ func (s *Scheduler) RunPending() {
 // Run all jobs regardless if they are scheduled to run or not
 func (s *Scheduler) RunAll() {
 	for i := 0; i < s.size; i++ {
+		s.Lock()
 		s.jobs[i].run()
+		s.Unlock()
 	}
 }
 
