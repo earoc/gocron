@@ -24,7 +24,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/jasonlvhit/gocron"
+	"github.com/earoc/gocron"
 )
 
 func task() {
