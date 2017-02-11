@@ -80,7 +80,8 @@ func NewJob(intervel uint64) *Job {
 
 // True if the job should be run now
 func (j *Job) shouldRun() bool {
-	return time.Now().After(j.nextRun)
+	timenow := time.Now()
+	return timenow.After(j.nextRun) || timenow.Equal(j.nextRun) //equal and after should both fine to trigger the job.
 }
 
 //Run the job and immdiately reschedulei it
@@ -186,6 +187,7 @@ func (j *Job) scheduleNextRun() {
 		}
 		j.nextRun = j.lastRun.Add(j.period * time.Second)
 	}
+	j.nextRun = j.nextRun.Add(-time.Duration(j.nextRun.Nanosecond())) //Set the nanosecond to be zero to make sure the comparation in ShouldRun is correct.
 }
 
 // the follow functions set the job's unit with seconds,minutes,hours...
@@ -405,7 +407,6 @@ func (s *Scheduler) Every(interval uint64) *Job {
 // Run all the jobs that are scheduled to run.
 func (s *Scheduler) RunPending() {
 	runnableJobs, n := s.getRunnableJobs()
-
 	if n != 0 {
 		for i := 0; i < n; i++ {
 			runnableJobs[i].run()

@@ -1,3 +1,10 @@
+## Where from and What's improved.
+This repo is forked from github.com/jasonlvhit/gocron when I try to find a cron module for my go project. The original project has 2 bugs that stop me from using it in my project.
+So I have them fixed. Which are:
+* Add duration after every run. The bug details --> https://github.com/jasonlvhit/gocron/issues/16
+* There may have chance that some job would be run at the next second of when it should be triggered. That's because jasonlvhit use `time.Time.After` to compare the `Time.Now()` and `time should be`, while when `Now`'s nanosecond is before the `time should be` the job wouldn't be triggered. Because allthe cron is besed on second-accurated rule. So I think nanosecond should be ignored in this cases.
+I hope I have the detail described. Enjoy this branch.
+
 ## goCron: A Golang Job Scheduling Package.
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/jasonlvhit/gocron)
 [![Stories in Ready](https://badge.waffle.io/jasonlvhit/gocron.png?label=ready&title=Ready)](https://waffle.io/jasonlvhit/gocron)
