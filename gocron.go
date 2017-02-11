@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -63,18 +64,23 @@ type Job struct {
 
 	// Map for function and  params of function
 	fparams map[string]([]interface{})
+
+	sync.RWMutex
 }
 
 // Create a new job with the time interval.
-func NewJob(intervel uint64) *Job {
+func NewJob(interval uint64) *Job {
 	return &Job{
-		intervel,
-		"", "", "",
-		time.Unix(0, 0),
-		time.Unix(0, 0), 0,
-		time.Sunday,
-		make(map[string]interface{}),
-		make(map[string]([]interface{})),
+		interval: interval,
+		jobFunc:  "",
+		unit:     "",
+		atTime:   "",
+		lastRun:  time.Unix(0, 0),
+		nextRun:  time.Unix(0, 0),
+		period:   0,
+		startDay: time.Sunday,
+		funcs:    make(map[string]interface{}),
+		fparams:  make(map[string]([]interface{})),
 	}
 }
 
@@ -166,7 +172,9 @@ func (j *Job) scheduleNextRun() {
 
 	if j.period != 0 {
 		// translate all the units to the Seconds
+		j.Lock()
 		j.nextRun = j.lastRun.Add(j.period * time.Second)
+		j.Unlock()
 	} else {
 		switch j.unit {
 		case "minutes":
@@ -346,6 +354,8 @@ type Scheduler struct {
 
 	// Size of jobs which jobs holding.
 	size int
+
+	sync.RWMutex
 }
 
 // Scheduler implements the sort.Interface{} for sorting jobs, by the time nextRun
@@ -364,14 +374,19 @@ func (s *Scheduler) Less(i, j int) bool {
 
 // Create a new scheduler
 func NewScheduler() *Scheduler {
-	return &Scheduler{[MAXJOBNUM]*Job{}, 0}
+	return &Scheduler{
+		jobs: [MAXJOBNUM]*Job{},
+		size: 0,
+	}
 }
 
 // Get the current runnable jobs, which shouldRun is True
 func (s *Scheduler) getRunnableJobs() (running_jobs [MAXJOBNUM]*Job, n int) {
 	runnableJobs := [MAXJOBNUM]*Job{}
 	n = 0
+	s.Lock()
 	sort.Sort(s)
+	s.Unlock()
 	for i := 0; i < s.size; i++ {
 		if s.jobs[i].shouldRun() {
 
@@ -390,7 +405,9 @@ func (s *Scheduler) NextRun() (*Job, time.Time) {
 	if s.size <= 0 {
 		return nil, time.Now()
 	}
+	s.Lock()
 	sort.Sort(s)
+	s.Unlock()
 	return s.jobs[0], s.jobs[0].nextRun
 }
 
@@ -416,7 +433,9 @@ func (s *Scheduler) RunPending() {
 // Run all jobs regardless if they are scheduled to run or not
 func (s *Scheduler) RunAll() {
 	for i := 0; i < s.size; i++ {
+		s.Lock()
 		s.jobs[i].run()
+		s.Unlock()
 	}
 }
 
