@@ -65,7 +65,7 @@ type Job struct {
 	// Map for function and  params of function
 	fparams map[string]([]interface{})
 
-	sync.RWMutex
+	m sync.RWMutex
 }
 
 // Create a new job with the time interval.
@@ -86,8 +86,8 @@ func NewJob(interval uint64) *Job {
 
 // True if the job should be run now
 func (j *Job) shouldRun() bool {
-	j.RLock()
-	defer j.RUnlock()
+	j.m.RLock()
+	defer j.m.RUnlock()
 	return time.Now().After(j.nextRun)
 }
 
@@ -118,13 +118,13 @@ func (j *Job) Do(jobFun interface{}, params ...interface{}) {
 	}
 
 	fname := getFunctionName(jobFun)
-	j.Lock()
+	j.m.Lock()
 	j.funcs[fname] = jobFun
 	j.fparams[fname] = params
 	j.jobFunc = fname
 	//schedule the next run
 	j.scheduleNextRun()
-	j.Unlock()
+	j.m.Unlock()
 }
 
 func (j *Job) DoImmediate(jobFun interface{}, params ...interface{}) {
@@ -134,11 +134,11 @@ func (j *Job) DoImmediate(jobFun interface{}, params ...interface{}) {
 	}
 
 	fname := getFunctionName(jobFun)
-	j.Lock()
+	j.m.Lock()
 	j.funcs[fname] = jobFun
 	j.fparams[fname] = params
 	j.jobFunc = fname
-	j.Unlock()
+	j.m.Unlock()
 	//immediate run
 	j.run()
 }
@@ -175,8 +175,8 @@ func (j *Job) at(t string) *Job {
 //	s.Every(1).Day().At("10:30").Do(task)
 //	s.Every(1).Monday().At("10:30").Do(task)
 func (j *Job) At(t string) *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.at(t)
 }
 
@@ -230,8 +230,8 @@ func (j *Job) second() *Job {
 
 // Set the unit with second
 func (j *Job) Second() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.second()
 }
 
@@ -242,8 +242,8 @@ func (j *Job) seconds() *Job {
 
 // Set the unit with seconds
 func (j *Job) Seconds() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.seconds()
 }
 
@@ -257,8 +257,8 @@ func (j *Job) minute() *Job {
 }
 
 func (j *Job) Minute() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.minute()
 }
 
@@ -269,8 +269,8 @@ func (j *Job) minutes() *Job {
 }
 
 func (j *Job) Minutes() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.minutes()
 }
 
@@ -283,8 +283,8 @@ func (j *Job) hour() *Job {
 }
 
 func (j *Job) Hour() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.hour()
 }
 
@@ -295,8 +295,8 @@ func (j *Job) hours() *Job {
 }
 
 func (j *Job) Hours() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.hours()
 }
 
@@ -309,8 +309,8 @@ func (j *Job) day() *Job {
 }
 
 func (j *Job) Day() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.day()
 }
 
@@ -321,8 +321,8 @@ func (j *Job) days() *Job {
 }
 
 func (j *Job) Days() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.days()
 }
 
@@ -337,8 +337,8 @@ func (j *Job) monday() *Job {
 }
 
 func (j *Job) Monday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.monday()
 }
 
@@ -352,8 +352,8 @@ func (j *Job) tuesday() *Job {
 }
 
 func (j *Job) Tuesday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.tuesday()
 }
 
@@ -368,8 +368,8 @@ func (j *Job) wednesday() *Job {
 }
 
 func (j *Job) Wednesday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.wednesday()
 }
 
@@ -383,8 +383,8 @@ func (j *Job) thursday() *Job {
 }
 
 func (j *Job) Thursday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.thursday()
 }
 
@@ -398,8 +398,8 @@ func (j *Job) friday() *Job {
 }
 
 func (j *Job) Friday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.friday()
 }
 
@@ -413,8 +413,8 @@ func (j *Job) saturday() *Job {
 }
 
 func (j *Job) Saturday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.saturday()
 }
 
@@ -428,8 +428,8 @@ func (j *Job) sunday() *Job {
 }
 
 func (j *Job) Sunday() *Job {
-	j.Lock()
-	defer j.Unlock()
+	j.m.Lock()
+	defer j.m.Unlock()
 	return j.sunday()
 }
 
@@ -440,8 +440,8 @@ func (j *Job) weeks() *Job {
 }
 
 func (j *Job) Weeks() *Job {
-	j.Lock()
-	j.Unlock()
+	j.m.Lock()
+	j.m.Unlock()
 	return j.weeks()
 }
 
@@ -453,14 +453,14 @@ type Scheduler struct {
 	// Size of jobs which jobs holding.
 	size int
 
-	sync.RWMutex
+	m sync.RWMutex
 }
 
 // Scheduler implements the sort.Interface{} for sorting jobs, by the time nextRun
 
 func (s *Scheduler) Len() int {
-	s.RLock()
-	defer s.RUnlock()
+	s.m.RLock()
+	defer s.m.RUnlock()
 	return s.size
 }
 
@@ -469,9 +469,9 @@ func (s *Scheduler) swap(i, j int) {
 }
 
 func (s *Scheduler) Swap(i, j int) {
-	s.Lock()
+	s.m.Lock()
 	s.swap(i, j)
-	defer s.Unlock()
+	defer s.m.Unlock()
 }
 
 func (s *Scheduler) less(i, j int) bool {
@@ -479,8 +479,8 @@ func (s *Scheduler) less(i, j int) bool {
 }
 
 func (s *Scheduler) Less(i, j int) bool {
-	s.jobs[i].RLock()
-	defer s.jobs[i].RUnlock()
+	s.jobs[i].m.RLock()
+	defer s.jobs[i].m.RUnlock()
 	return s.less(i, j)
 }
 
@@ -497,8 +497,8 @@ func (s *Scheduler) getRunnableJobs() ([MAXJOBNUM]*Job, int) {
 	runnableJobs := [MAXJOBNUM]*Job{}
 	n := 0
 	sort.Sort(s)
-	s.RLock()
-	defer s.RUnlock()
+	s.m.RLock()
+	defer s.m.RUnlock()
 	for i := 0; i < s.size; i++ {
 		if s.jobs[i].shouldRun() {
 
@@ -517,9 +517,9 @@ func (s *Scheduler) NextRun() (*Job, time.Time) {
 	if s.size <= 0 {
 		return nil, time.Now()
 	}
-	s.Lock()
+	s.m.Lock()
 	sort.Sort(s)
-	s.Unlock()
+	s.m.Unlock()
 	return s.jobs[0], s.jobs[0].nextRun
 }
 
@@ -532,8 +532,8 @@ func (s *Scheduler) every(interval uint64) *Job {
 }
 
 func (s *Scheduler) Every(interval uint64) *Job {
-	s.Lock()
-	defer s.Unlock()
+	s.m.Lock()
+	defer s.m.Unlock()
 	return s.every(interval)
 }
 
@@ -551,9 +551,20 @@ func (s *Scheduler) RunPending() {
 // Run all jobs regardless if they are scheduled to run or not
 func (s *Scheduler) RunAll() {
 	for i := 0; i < s.size; i++ {
-		s.Lock()
+		s.m.Lock()
 		s.jobs[i].run()
-		s.Unlock()
+		s.m.Unlock()
+	}
+}
+
+func (s *Scheduler) RunOne(j interface{}) {
+	i := 0
+	s.m.RLock()
+	defer s.m.RUnlock()
+	for ; i < s.size; i++ {
+		if s.jobs[i].jobFunc == getFunctionName(j) {
+			s.jobs[i].run()
+		}
 	}
 }
 
@@ -582,9 +593,9 @@ func (s *Scheduler) remove(j interface{}) {
 }
 
 func (s *Scheduler) Remove(j interface{}) {
-	s.Lock()
+	s.m.Lock()
 	s.remove(j)
-	s.Unlock()
+	s.m.Unlock()
 }
 
 // Delete all scheduled jobs
